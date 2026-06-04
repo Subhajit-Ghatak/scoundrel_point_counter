@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dungeon Crawler Health Tracker</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&display=swap');
+
+        :root {
+            --bg-dark: #020b14;
+            --panel-bg: #03111e;
+            --neon-cyan: #4ef2d2;
+            --active-blue: #1fa2ff;
+            --neon-glow: 0 0 15px rgba(78, 242, 210, 0.6);
+            --text-muted: #4e6b82;
+            --btn-dark: #122230;
+            --btn-border: #1a354b;
+            --hud-line-blue: #103b5c;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at 50% 40%, #061c2e 0%, #020b14 80%);
+            font-family: 'Montserrat', sans-serif;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .hud-container {
+            width: 100%;
+            max-width: 460px;
+            background-color: var(--panel-bg);
+            border: 2px solid #09253d;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
+            position: relative;
+        }
+
+        /* ----------------------------------------------------
+           EXACT IMAGE HEADER SEGMENT DESIGN
+        ---------------------------------------------------- */
+        .hud-header-segment {
+            width: 100%;
+            position: relative;
+            margin-bottom: 24px;
+            text-align: center;
+            padding-bottom: 12px;
+        }
+
+        /* The stylized neon blue structural framing line behind the titles */
+        .hud-header-segment::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: -24px; /* Stretch completely across the inner padding */
+            right: -24px;
+            height: 14px;
+            /* Draws the exact dipping/angled drop line seen on the left and right sides */
+            background: var(--hud-line-blue);
+            clip-path: polygon(
+                0% 0%, 5% 0%, 8% 50%, 15% 50%, 17% 0%, 
+                83% 0%, 85% 50%, 92% 50%, 95% 0%, 100% 0%,
+                100% 15%, 94% 15%, 91% 65%, 84% 65%, 82% 15%,
+                18% 15%, 16% 65%, 9% 65%, 6% 15%, 0% 15%
+            );
+            box-shadow: 0 0 10px rgba(31, 162, 255, 0.3);
+        }
+
+        /* The glowing neon line floating directly underneath the text */
+        .header-glow-bar {
+            position: absolute;
+            bottom: -1px;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-cyan) 20%, var(--neon-cyan) 80%, transparent);
+            box-shadow: 0 0 8px var(--neon-cyan);
+            z-index: 2;
+        }
+
+        .hud-title {
+            font-size: 2.3rem;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #ffffff;
+            text-transform: uppercase;
+            line-height: 1;
+        }
+
+        .hud-subtitle {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #7fa1bccc;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-top: 6px;
+            position: relative;
+            z-index: 2;
+        }
+        /* ---------------------------------------------------- */
+
+        /* Health Bar Element */
+        .bar-outer-frame {
+            border: 2px solid #0f3554;
+            padding: 2px;
+            border-radius: 6px;
+            background: #01070d;
+            margin-bottom: 16px;
+        }
+
+        .bar-container {
+            background-color: #041424;
+            height: 24px;
+            width: 100%;
+            position: relative;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #166088 0%, var(--neon-cyan) 100%);
+            box-shadow: 0 0 15px rgba(78, 242, 210, 0.4);
+            transition: width 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .bar-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 1.5px;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+        }
+
+        /* Giant Numeric Readout */
+        .big-hp-display {
+            font-size: 4.5rem;
+            font-weight: 800;
+            text-align: center;
+            color: var(--neon-cyan);
+            text-shadow: var(--neon-glow);
+            margin-bottom: 18px;
+            line-height: 1;
+        }
+
+        .grid-section-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: center;
+            margin-bottom: 14px;
+        }
+
+        /* Core 1 to 20 Grid setup */
+        .health-matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .matrix-cell {
+            background-color: var(--btn-dark);
+            border: 2px solid var(--btn-border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            font-weight: 700;
+            padding: 12px 0;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .matrix-cell:hover {
+            border-color: var(--neon-cyan);
+            color: #ffffff;
+        }
+
+        .matrix-cell.lit {
+            background-color: #052632;
+            border-color: var(--neon-cyan);
+            color: #ffffff;
+            box-shadow: inset 0 0 10px rgba(78, 242, 210, 0.2);
+        }
+
+        .matrix-cell.active-peak {
+            background-color: #093c4e;
+            border-color: var(--neon-cyan);
+            color: var(--neon-cyan);
+            text-shadow: var(--neon-glow);
+            box-shadow: inset 0 0 15px rgba(78, 242, 210, 0.4), var(--neon-glow);
+        }
+
+        /* Lower Log Console Section */
+        .console-box {
+            background: #020912;
+            border: 2px solid #0a2136;
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 110px;
+        }
+
+        .console-meta {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            width: 50%;
+        }
+
+        .console-main-heading {
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: #ffffff;
+        }
+
+        .console-sub-heading {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 1.5px;
+            margin-top: 2px;
+        }
+
+        .reset-action-trigger {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            margin-top: 12px;
+            text-align: left;
+            text-decoration: underline;
+            width: fit-content;
+        }
+
+        .reset-action-trigger:hover {
+            color: var(--neon-cyan);
+        }
+
+        .console-feed-column {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+            width: 50%;
+            border-left: 2px solid #0a2136;
+            padding-left: 16px;
+            height: 80px;
+            overflow-y: auto;
+        }
+
+        .feed-row-item {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #ffffff;
+            opacity: 0.9;
+            animation: itemArrival 0.2s ease-out forwards;
+        }
+
+        .feed-row-void {
+            font-size: 0.8rem;
+            color: #112a3d;
+            font-style: italic;
+            margin-top: 30px;
+        }
+
+        @keyframes itemArrival {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 0.9; transform: translateY(0); }
+        }
+
+        .console-feed-column::-webkit-scrollbar {
+            width: 3px;
+        }
+        .console-feed-column::-webkit-scrollbar-thumb {
+            background: #0f3554;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hud-container">
+        
+        <div class="hud-header-segment">
+            <div class="hud-title">HEALTH TRACKER</div>
+            <div class="hud-subtitle">SINGLE PLAYER DUNGEON CRAWLER</div></br>
+            <div class="header-glow-bar"></div>
+        </div>
+
+        <div class="bar-outer-frame">
+            <div class="bar-container">
+                <div class="bar-fill" id="hpBar"></div>
+                <div class="bar-text" id="barText">20 / 20 HP</div>
+            </div>
+        </div>
+
+        <div class="big-hp-display" id="mainHPLabel">20 HP</div>
+
+        <div class="grid-section-title">CURRENT HEALTH GRID</div>
+
+        <div class="health-matrix-grid" id="cardGrid"></div>
+
+        <div class="console-box">
+            <div class="console-meta">
+                <div class="console-main-heading">DAMAGE LOG</div>
+                <div class="console-sub-heading">HEALTH REDUCTION LOG</div>
+                <button class="reset-action-trigger" id="resetBtn">Reset Tracker</button>
+            </div>
+            <div class="console-feed-column" id="logStream">
+                <span class="feed-row-void" id="voidMessage">NO DAMAGE LOGGED</span>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let currentHP = 20;
+        const maxHP = 20;
+
+        const mainHPLabelEl = document.getElementById('mainHPLabel');
+        const hpBarEl = document.getElementById('hpBar');
+        const barTextEl = document.getElementById('barText');
+        const cardGridEl = document.getElementById('cardGrid');
+        const logStreamEl = document.getElementById('logStream');
+        const resetBtn = document.getElementById('resetBtn');
+
+        function initGrid() {
+            cardGridEl.innerHTML = '';
+            for (let i = 1; i <= 20; i++) {
+                const cell = document.createElement('button');
+                cell.type = 'button';
+                cell.className = 'matrix-cell';
+                cell.textContent = i;
+                cell.setAttribute('data-value', i);
+
+                cell.addEventListener('click', () => updateHealth(i));
+                cardGridEl.appendChild(cell);
+            }
+        }
+
+        function updateHealth(targetValue) {
+            if (targetValue === currentHP) return;
+
+            if (targetValue < currentHP) {
+                const reduction = currentHP - targetValue;
+                logDamageEvent(reduction);
+            }
+
+            currentHP = targetValue;
+            syncUI();
+        }
+
+        function logDamageEvent(pointsLost) {
+            const initialPlaceholder = document.getElementById('voidMessage');
+            if (initialPlaceholder) initialPlaceholder.remove();
+
+            const logEntry = document.createElement('div');
+            logEntry.className = 'feed-row-item';
+            logEntry.textContent = `-${pointsLost} HP`;
+
+            logStreamEl.insertBefore(logEntry, logStreamEl.firstChild);
+        }
+
+        function syncUI() {
+            mainHPLabelEl.textContent = `${currentHP} HP`;
+            barTextEl.textContent = `${currentHP} / 20 HP`;
+            
+            const fillRatio = (currentHP / maxHP) * 100;
+            hpBarEl.style.width = `${fillRatio}%`;
+
+            const cells = cardGridEl.querySelectorAll('.matrix-cell');
+            cells.forEach(cell => {
+                const cellVal = parseInt(cell.getAttribute('data-value'), 10);
+                
+                cell.classList.remove('lit', 'active-peak');
+
+                if (cellVal === currentHP) {
+                    cell.classList.add('active-peak');
+                } else if (cellVal < currentHP) {
+                    cell.classList.add('lit');
+                }
+            });
+        }
+
+        resetBtn.addEventListener('click', () => {
+            currentHP = 20;
+            logStreamEl.innerHTML = '<span class="feed-row-void" id="voidMessage">NO DAMAGE LOGGED</span>';
+            syncUI();
+        });
+
+        initGrid();
+        syncUI();
+    </script>
+</body>
+</html>
