@@ -17,6 +17,8 @@
             --btn-dark: #122230;
             --btn-border: #1a354b;
             --hud-line-blue: #103b5c;
+            --neon-red: #ff4a4a;
+            --red-glow: 0 0 12px rgba(255, 74, 74, 0.5);
         }
 
         * {
@@ -59,15 +61,13 @@
             padding-bottom: 12px;
         }
 
-        /* The stylized neon blue structural framing line behind the titles */
         .hud-header-segment::before {
             content: '';
             position: absolute;
             bottom: 0;
-            left: -24px; /* Stretch completely across the inner padding */
+            left: -24px;
             right: -24px;
             height: 14px;
-            /* Draws the exact dipping/angled drop line seen on the left and right sides */
             background: var(--hud-line-blue);
             clip-path: polygon(
                 0% 0%, 5% 0%, 8% 50%, 15% 50%, 17% 0%, 
@@ -78,7 +78,6 @@
             box-shadow: 0 0 10px rgba(31, 162, 255, 0.3);
         }
 
-        /* The glowing neon line floating directly underneath the text */
         .header-glow-bar {
             position: absolute;
             bottom: -1px;
@@ -109,7 +108,6 @@
             position: relative;
             z-index: 2;
         }
-        /* ---------------------------------------------------- */
 
         /* Health Bar Element */
         .bar-outer-frame {
@@ -160,8 +158,43 @@
             text-align: center;
             color: var(--neon-cyan);
             text-shadow: var(--neon-glow);
-            margin-bottom: 18px;
+            margin-bottom: 12px;
             line-height: 1;
+        }
+
+        /* Quick Actions Segment */
+        .quick-damage-container {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .damage-btn {
+            background-color: #240c11;
+            border: 2px solid #4a151f;
+            border-radius: 6px;
+            color: #ff9494;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 700;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            flex: 1;
+            max-width: 70px;
+            text-align: center;
+        }
+
+        .damage-btn:hover {
+            border-color: var(--neon-red);
+            color: #ffffff;
+            box-shadow: var(--red-glow);
+            background-color: #3d121a;
+        }
+
+        .damage-btn:active {
+            transform: scale(0.95);
         }
 
         .grid-section-title {
@@ -236,19 +269,11 @@
             width: 50%;
         }
 
-        .console-main-heading {
-            font-size: 1.3rem;
-            font-weight: 800;
-            letter-spacing: 1px;
-            color: #ffffff;
-        }
-
         .console-sub-heading {
             font-size: 0.75rem;
             font-weight: 700;
             color: var(--text-muted);
             letter-spacing: 1.5px;
-            margin-top: 2px;
         }
 
         .reset-action-trigger {
@@ -285,7 +310,8 @@
         .feed-row-item {
             font-size: 1rem;
             font-weight: 700;
-            color: #ffffff;
+            color: #ff4a4a;
+            text-shadow: 0 0 5px rgba(255, 74, 74, 0.2);
             opacity: 0.9;
             animation: itemArrival 0.2s ease-out forwards;
         }
@@ -316,7 +342,7 @@
         
         <div class="hud-header-segment">
             <div class="hud-title">HEALTH TRACKER</div>
-            <div class="hud-subtitle">SINGLE PLAYER DUNGEON CRAWLER</div></br>
+            <div class="hud-subtitle">SINGLE PLAYER DUNGEON CRAWLER</div>
             <div class="header-glow-bar"></div>
         </div>
 
@@ -329,13 +355,20 @@
 
         <div class="big-hp-display" id="mainHPLabel">20 HP</div>
 
+        <div class="quick-damage-container">
+            <button class="damage-btn" onclick="dealDamage(1)">-1</button>
+            <button class="damage-btn" onclick="dealDamage(2)">-2</button>
+            <button class="damage-btn" onclick="dealDamage(4)">-4</button>
+            <button class="damage-btn" onclick="dealDamage(8)">-8</button>
+            <button class="damage-btn" onclick="dealDamage(12)">-12</button>
+        </div>
+
         <div class="grid-section-title">CURRENT HEALTH GRID</div>
 
         <div class="health-matrix-grid" id="cardGrid"></div>
 
         <div class="console-box">
             <div class="console-meta">
-                <div class="console-main-heading">DAMAGE LOG</div>
                 <div class="console-sub-heading">HEALTH REDUCTION LOG</div>
                 <button class="reset-action-trigger" id="resetBtn">Reset Tracker</button>
             </div>
@@ -381,6 +414,19 @@
 
             currentHP = targetValue;
             syncUI();
+        }
+
+        function dealDamage(amount) {
+            if (currentHP <= 0) return;
+
+            const targetHP = Math.max(0, currentHP - amount);
+            const actualLoss = currentHP - targetHP;
+
+            if (actualLoss > 0) {
+                logDamageEvent(actualLoss);
+                currentHP = targetHP;
+                syncUI();
+            }
         }
 
         function logDamageEvent(pointsLost) {
