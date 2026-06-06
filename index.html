@@ -260,6 +260,7 @@
             justify-content: space-between;
             align-items: center;
             min-height: 110px;
+            margin-bottom: 24px;
         }
 
         .console-meta {
@@ -323,17 +324,82 @@
             margin-top: 30px;
         }
 
+        /* New Match Record Counters Section */
+        .match-counters-box {
+            background: #020b14;
+            border: 2px solid #0b253c;
+            border-radius: 8px;
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .counter-widget {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #041322;
+            border: 1px solid #13334f;
+            border-radius: 6px;
+            padding: 6px 12px;
+            flex: 1;
+        }
+
+        .counter-label {
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .counter-label.win { color: var(--neon-cyan); }
+        .counter-label.loss { color: #ff6b6b; }
+
+        .counter-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .counter-btn {
+            background: #0c2033;
+            border: 1px solid #1c4366;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 700;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s ease;
+        }
+
+        .counter-btn:hover {
+            background: #173b5e;
+            border-color: var(--active-blue);
+        }
+
+        .counter-value {
+            font-size: 1.2rem;
+            font-weight: 800;
+            min-width: 20px;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+
         @keyframes itemArrival {
             from { opacity: 0; transform: translateY(-5px); }
             to { opacity: 0.9; transform: translateY(0); }
         }
 
-        .console-feed-column::-webkit-scrollbar {
-            width: 3px;
-        }
-        .console-feed-column::-webkit-scrollbar-thumb {
-            background: #0f3554;
-        }
+        .console-feed-column::-webkit-scrollbar { width: 3px; }
+        .console-feed-column::-webkit-scrollbar-thumb { background: #0f3554; }
     </style>
 </head>
 <body>
@@ -377,11 +443,38 @@
             </div>
         </div>
 
+        <!-- NEW: Match Results Scoreboard Section -->
+        <div class="match-counters-box">
+            <div class="counter-widget">
+                <span class="counter-label win">Wins</span>
+                <div class="counter-controls">
+                    <button class="counter-btn" onclick="adjustCounter('wins', -1)">-</button>
+                    <span class="counter-value" id="winsDisplay">0</span>
+                    <button class="counter-btn" onclick="adjustCounter('wins', 1)">+</button>
+                </div>
+            </div>
+            
+            <div class="counter-widget">
+                <span class="counter-label loss">Losses</span>
+                <div class="counter-controls">
+                    <button class="counter-btn" onclick="adjustCounter('losses', -1)">-</button>
+                    <span class="counter-value" id="lossesDisplay">0</span>
+                    <button class="counter-btn" onclick="adjustCounter('losses', 1)">+</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
         let currentHP = 20;
         const maxHP = 20;
+
+        // Initialize Win/Loss tallies from LocalStorage memory cache
+        let matchScore = {
+            wins: parseInt(localStorage.getItem('scoundrel_wins')) || 0,
+            losses: parseInt(localStorage.getItem('scoundrel_losses')) || 0
+        };
 
         const mainHPLabelEl = document.getElementById('mainHPLabel');
         const hpBarEl = document.getElementById('hpBar');
@@ -389,6 +482,8 @@
         const cardGridEl = document.getElementById('cardGrid');
         const logStreamEl = document.getElementById('logStream');
         const resetBtn = document.getElementById('resetBtn');
+        const winsDisplayEl = document.getElementById('winsDisplay');
+        const lossesDisplayEl = document.getElementById('lossesDisplay');
 
         function initGrid() {
             cardGridEl.innerHTML = '';
@@ -440,6 +535,18 @@
             logStreamEl.insertBefore(logEntry, logStreamEl.firstChild);
         }
 
+        // Toggles scoreboard states and safely avoids negative runs
+        function adjustCounter(type, change) {
+            matchScore[type] = Math.max(0, matchScore[type] + change);
+            localStorage.setItem(`scoundrel_${type}`, matchScore[type]);
+            renderCounters();
+        }
+
+        function renderCounters() {
+            winsDisplayEl.textContent = matchScore[type = 'wins'];
+            lossesDisplayEl.textContent = matchScore[type = 'losses'];
+        }
+
         function syncUI() {
             mainHPLabelEl.textContent = `${currentHP} HP`;
             barTextEl.textContent = `${currentHP} / 20 HP`;
@@ -469,6 +576,7 @@
 
         initGrid();
         syncUI();
+        renderCounters();
     </script>
 </body>
 </html>
