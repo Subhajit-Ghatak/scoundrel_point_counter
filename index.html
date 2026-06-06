@@ -162,12 +162,19 @@
             line-height: 1;
         }
 
-        /* Quick Actions Segment */
+        /* Quick Actions Segment Styles */
         .quick-damage-container {
             display: flex;
             justify-content: center;
             gap: 8px;
-            margin-bottom: 24px;
+            margin-bottom: 8px; /* Tighter margin so addition row stacks naturally */
+        }
+
+        .quick-heal-container {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 24px; /* Retains original separation from the grid title */
         }
 
         .damage-btn {
@@ -194,6 +201,33 @@
         }
 
         .damage-btn:active {
+            transform: scale(0.95);
+        }
+
+        .heal-btn {
+            background-color: #0b211d;
+            border: 2px solid #144037;
+            border-radius: 6px;
+            color: #a3f7e6;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 700;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            flex: 1;
+            max-width: 70px;
+            text-align: center;
+        }
+
+        .heal-btn:hover {
+            border-color: var(--neon-cyan);
+            color: #ffffff;
+            box-shadow: var(--neon-glow);
+            background-color: #174d42;
+        }
+
+        .heal-btn:active {
             transform: scale(0.95);
         }
 
@@ -429,6 +463,14 @@
             <button class="damage-btn" onclick="dealDamage(12)">-12</button>
         </div>
 
+        <div class="quick-heal-container">
+            <button class="heal-btn" onclick="gainHealth(1)">+1</button>
+            <button class="heal-btn" onclick="gainHealth(2)">+2</button>
+            <button class="heal-btn" onclick="gainHealth(4)">+4</button>
+            <button class="heal-btn" onclick="gainHealth(8)">+8</button>
+            <button class="heal-btn" onclick="gainHealth(12)">+12</button>
+        </div>
+
         <div class="grid-section-title">CURRENT HEALTH GRID</div>
 
         <div class="health-matrix-grid" id="cardGrid"></div>
@@ -443,7 +485,6 @@
             </div>
         </div>
 
-        <!-- NEW: Match Results Scoreboard Section -->
         <div class="match-counters-box">
             <div class="counter-widget">
                 <span class="counter-label win">Wins</span>
@@ -524,6 +565,13 @@
             }
         }
 
+        function gainHealth(amount) {
+            if (currentHP >= maxHP) return;
+
+            currentHP = Math.min(maxHP, currentHP + amount);
+            syncUI();
+        }
+
         function logDamageEvent(pointsLost) {
             const initialPlaceholder = document.getElementById('voidMessage');
             if (initialPlaceholder) initialPlaceholder.remove();
@@ -543,8 +591,8 @@
         }
 
         function renderCounters() {
-            winsDisplayEl.textContent = matchScore[type = 'wins'];
-            lossesDisplayEl.textContent = matchScore[type = 'losses'];
+            winsDisplayEl.textContent = matchScore['wins'];
+            lossesDisplayEl.textContent = matchScore['losses'];
         }
 
         function syncUI() {
